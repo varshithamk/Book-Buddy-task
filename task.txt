@@ -1,0 +1,283 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+void main() {
+  runApp(BookManagerApp());
+}
+
+class SignInPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        //text styling
+        title: Text('Sign In', style: TextStyle(color: Colors.grey)),
+      ),
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.all(90.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+
+            children: [
+              TextField(
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                ),
+              ),
+
+              SizedBox(height: 20), 
+              TextField(
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 20), 
+              //signin button
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    //displays to full screen
+                    MaterialPageRoute(builder: (context) => HomePage()),
+                  );
+                },
+                child: Text('Sign In'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class Book {
+  final String name;
+  final String author;
+  final bool available;
+
+  Book({required this.name, required this.author, required this.available});
+}
+
+class ThemeProvider extends ChangeNotifier {
+  ThemeData lightTheme = ThemeData.light();
+  ThemeData darkTheme = ThemeData.dark();
+
+  ThemeData getTheme() => lightTheme;
+  ThemeData getDarkTheme() => darkTheme;
+
+  void toggleTheme() {
+    if (lightTheme == ThemeData.light()) {
+      lightTheme = ThemeData.dark();
+      darkTheme = ThemeData.light();
+    } else {
+      lightTheme = ThemeData.light();
+      darkTheme = ThemeData.dark();
+    }
+    notifyListeners();
+  }
+}
+
+class BookManagerApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<ThemeProvider>(
+      create: (_) => ThemeProvider(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            theme: themeProvider.getTheme(),
+            darkTheme: themeProvider.getDarkTheme(),
+            home: SignInPage(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  final List<Book> books = [
+    Book(
+        name: 'The God of Small Things',
+        author: 'Arundathi Roy',
+        available: true),
+    
+    Book(name: 'Ramayana', author: 'Valmiki', available: true),
+    
+    Book(
+        name: 'La sombra del viento(The Shadow of the Wind)',
+        author: 'Carlos Ruiz Zafón',
+        available: false),
+  ];
+
+  @override
+  HomePageState createState() => HomePageState(); 
+}
+
+
+class HomePageState extends State<HomePage> {
+  late TextEditingController searchController; 
+  List<Book> filteredBooks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    searchController = TextEditingController(); 
+    filteredBooks.addAll(widget.books);
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void filterBooks(String query) {
+    List<Book> filteredList = [];
+    if (query.isNotEmpty) {
+      widget.books.forEach((book) {
+        if (book.name.toLowerCase().contains(query.toLowerCase()) ||
+            book.author.toLowerCase().contains(query.toLowerCase())) {
+          filteredList.add(book);
+        }
+      });
+    } else {
+      filteredList.addAll(widget.books);
+    }
+    setState(() {
+      filteredBooks.clear();
+      filteredBooks.addAll(filteredList);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Home'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfilePage()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: TextField(
+              controller: searchController,
+              onChanged: filterBooks,
+              decoration: InputDecoration(
+                labelText: 'Search',
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+          ),
+          Expanded(
+            child: filteredBooks.isEmpty
+                ? Center(
+                    child: Text('Book not found'),
+                  )
+                : ListView.builder(
+                    itemCount: filteredBooks.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(filteredBooks[index].name),
+                        subtitle:
+                            Text('Author: ${filteredBooks[index].author}'),
+                        trailing: filteredBooks[index].available
+                            ? Icon(Icons.check_circle, color: Colors.green)
+                            : Icon(Icons.cancel, color: Colors.red),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ProfilePage extends StatefulWidget {
+  @override
+  ProfilePageState createState() => ProfilePageState();
+}
+
+class ProfilePageState extends State<ProfilePage> {
+  String _selectedLanguage = 'English';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Profile', style: TextStyle(color: Colors.blue)),
+      ),
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Welcome to your Profile!',
+                style: TextStyle(fontSize: 20),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Username: Varshitha M K',
+                style: TextStyle(fontSize: 16),
+              ),
+              SizedBox(height: 20),
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      themeProvider.toggleTheme();
+                    },
+                    child: Text('Theme'),
+                  );
+                },
+              ),
+              SizedBox(height: 20),
+              DropdownButton<String>(
+                value: _selectedLanguage,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedLanguage = newValue!;
+                  });
+                },
+                items: <String>['English', 'Kannada', 'Spanish']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => SignInPage()),
+                  );
+                },
+                child: Text('Sign Out'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
